@@ -1,0 +1,31 @@
+---
+title: "PAISAS Chapter 3"
+author: "Mohammad Amr Khan"
+output: html_notebook
+---
+
+*Practice Questions from PAISAS chapter 3*
+
+## Packages
+```{r}
+library(tidyverse)
+```
+
+
+## Reading Delimited Data set
+
+```{r}
+my_url <- "http://www.utsc.utoronto.ca/~butler/d29/testing.txt"
+data <- read_delim(my_url, " ")
+```
+After imported, we need to checked the data
+
+```{r}
+data
+```
+
+THere are three columns:
+x - double
+y - double
+g - string of characters
+

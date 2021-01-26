@@ -1,0 +1,157 @@
+---
+title: "R Notebook"
+author: "Mohammad Amr Khan"
+output: html_notebook
+---
+
+
+*Practice Questions from PAISAS Chapter 4*
+
+## Packages 
+
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+## Orange Juice
+
+The data set is available online and looks to be a space delimited txt file
+```{r}
+oj_url <- "https://www.utsc.utoronto.ca/~butler/c32/ojuice.txt"
+oj_data <- read_delim(oj_url, " ")
+```
+
+The column specification shows that there are three columns, with the 
+headings run, sweetness and pectin. 
+
+We can we the data, by called the data frame
+
+```{r}
+oj_data
+```
+
+We see there is data for 24 runs
+
+As we are interested between the relationship between sweetness and pectin,
+both of which are quantitative variables, we will use a scatterpolt
+
+```{r}
+ggplot(oj_data, aes(x = pectin, y = sweetness)) + geom_point()
+```
+There does appear to be a negative relationship between pectin and sweetness.
+As the pectin levels increase, the sweetness value decreases.
+
+```{r}
+ggplot(oj_data, aes(x = pectin, y = sweetness)) + geom_point() + geom_smooth()
+```
+
+The loess curve does show a negative relative but not too convincing
+
+## Making Soap
+
+Data available on the website
+
+```{r}
+soap_url <- "https://www.utsc.utoronto.ca/~butler/c32/soap.txt"
+soap_data <- read_delim(soap_url, " ")
+```
+
+The data has been ingested and shows that there are 4 columns
+
+```{r}
+soap_data
+```
+
+we can see 27 runs
+
+```{r}
+ggplot(soap_data, aes(x = scrap)) + geom_histogram(bins = 10)
+```
+
+we see two peaks one around 260 and another at 360. This does not show
+normal distribution but rather bimodal.
+
+We want to compare the production lines and their scrap values
+
+```{r}
+ggplot(soap_data, aes(x = line, y = scrap)) + geom_boxplot()
+```
+
+
+The median on line A is higher than that of line b. There is overlap between
+the boxplots so there is not a large difference between the lines. 
+
+To see if there is a relationship between the speed and scrap
+produced we can used a scatterplot
+
+```{r}
+ggplot(soap_data, aes(x = speed, y = scrap)) + geom_point()
+```
+
+This does show a positive correlation, means that as speed increases so does
+the amount of scrap produced.
+
+Let's see if there is a difference between the lines
+
+```{r}
+ggplot(soap_data, aes(x = speed, y = scrap, colour = line)) + geom_point()
+```
+
+Apart from two data points this graph shows that line a produces more scrap than
+line b at similar speeds
+
+```{r}
+ggplot(soap_data, aes(x = speed, y = scrap)) + geom_point() + facet_wrap(~line)
+```
+
+## Handling Shipments
+
+A company called Global Electronics from time to time imports shipments of a 
+certain large part used as a component in several of its products. 
+The size of the shipment varies each time. Each shipment is sent to one of two
+warehouses (labelled A and B) for handling.
+
+The data is in a csv file
+
+```{r}
+shipments_url <- "http://www.utsc.utoronto.ca/~butler/c32/global.csv"
+shipment_data <- read_csv(shipments_url)
+```
+
+The data has been read and R tells us that this data set has three columns - 
+warehouse, size and cost which based of the description makes sense
+
+```{r}
+shipment_data
+```
+
+we see there are 10 rows of data and 3 columns.
+
+We can use a scatterplot to see if there is a relationship between
+handling costs and shipment size
+
+```{r}
+ggplot(shipment_data, aes(x = size, y = cost)) + geom_point()
+```
+
+The scatter plot appears to show a almost linear relationship between the
+handling costs and shipment size. As the size increases so does the cost
+
+```{r}
+ggplot(shipment_data, aes(x = warehouse, y = size)) + geom_boxplot()
+```
+
+The median of the shipment sizes for warehouse b are must larger than those
+for warehouse A.
+The boxplot shows us that the larger shipments are sent to warehouse b.
+
+To see the relationship between size and cost while including which warehouse
+we can use a grouped scatter plot
+
+```{r}
+ggplot(shipment_data, aes(x = size, y = cost, colour = warehouse)) + 
+  geom_point()
+```
+This shows that the two lines we observered were for each warehouse.
+
+The slope for warehouse a is steeper than that for warehouse B.

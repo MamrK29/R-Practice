@@ -1,0 +1,257 @@
+---
+title: "PAISAS Chapter 5"
+author: "Mohammad Amr Khan"
+output: html_notebook
+---
+
+## Packages
+
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+## North Carolina Births
+
+THe data set shows 500 randomly chosen briths in North Carolina. 
+
+```{r}
+birth_url <- "http://www.utsc.utoronto.ca/~butler/c32/ncbirths.csv"
+birth_data <- read_csv(birth_url)
+```
+
+We see that there are 10 columns
+
+```{r}
+birth_data
+```
+500 rows of data with 10 columns
+
+```{r}
+glimpse(birth_data)
+```
+```{r}
+ggplot(birth_data, aes(x = `Weight (pounds)`)) + geom_histogram(bins = 10)
+```
+
+The data does appear to be normally distribution but with a skew towards
+the left.
+
+To see if there are any outliers in the data set we can use a boxplot
+
+```{r}
+ggplot(birth_data, aes(x = 1, y = `Weight (pounds)`)) + geom_boxplot()
+```
+
+We can see the largest weight is an outlier. But there are also, many births
+that are below the whisker that are outliers. These may be the premature births
+
+## More About NC Births
+
+Lets investigate the premature births, What is the classifcation of premature
+
+```{r}
+birth_data %>% 
+  group_by(`Premie?`) %>% 
+  summarise(min_weeks = min(`Weeks Gestation`),
+            max_week = max(`Weeks Gestation`))
+```
+All births that are classed as premature has a term length of 20 - 36 weeks.
+
+Checking if there is a relationship between term length and birth weight
+
+```{r}
+ggplot(birth_data, aes(x = `Weeks Gestation`, y = `Weight (pounds)`)) +
+  geom_point()
+```
+
+There does appear to be an upwards trend. Most of the data points
+are centered around weeks 36 - 41, the normal length of a preganacy
+
+To see the weights of a premature
+
+```{r}
+ggplot(birth_data, aes(x = `Weeks Gestation`, y = `Weight (pounds)`, color = factor(`Premie?`))) +
+  geom_point()
+```
+ between the normal births and weight there is not relationship.
+ 
+## Nenana, Alaska
+
+Nenana, Alaska, is about 50 miles west of Fairbanks. Every spring, there is a contest in Nenana. A wooden tripod is placed on the frozen river, and people try to guess the exact minute when the ice melts enough for the tripod to fall through the ice. The contest started in 1917 as an amusement for railway workers, and has taken place every year since. Now, hundreds of thousands of people enter their guesses on the Internet and the prize for the winner can be as much as $300,000.
+
+Reading the data into R
+
+```{r}
+nenana_url <- "http://www.utsc.utoronto.ca/~butler/c32/nenana.txt"
+nenana_data <- read_tsv(nenana_url)
+```
+
+```{r}
+nenana_data
+```
+
+we see the data showing up with 87 row
+
+```{r}
+glimpse(nenana_data)
+```
+
+```{r}
+summary(nenana_data)
+```
+
+```{r}
+ggplot(nenana_data, aes(x=JulianDate)) + geom_histogram(bins = 8)
+```
+
+Looks to be symmetric.
+
+
+## Computerized Accounting
+Beginning accounting students need to learn to learn to audit in a computerized environment. A sample of beginning accounting students took each of two tests: the Computer Attitude Scale (CAS) and the Computer Anxiety Rating Scale (CARS). A higher score in each indicates greater anxiety around computers. The test scores are scaled to be between 0 and 5. Also noted was each student’s gender. The data are in http://www.utsc.utoronto.ca/~butler/c32/compatt.txt. The data values are separated by spaces.
+
+```{r}
+ca_url <- "http://www.utsc.utoronto.ca/~butler/c32/compatt.txt"
+ca_data <- read_delim(ca_url, " ")
+```
+
+```{r}
+ca_data
+```
+
+```{r}
+summary(ca_data)
+```
+
+We have 35 rows of data with 3 columns
+
+To see how many males and females took the test
+
+```{r}
+ca_data %>% 
+  group_by(gender) %>% 
+  summarize(count=n())
+```
+
+In this data set we have data for 15 females and 20 males
+
+
+```{r}
+ggplot(ca_data, aes(x = gender, y = CAS)) + geom_boxplot()
+```
+
+Males has a higher median CAS score than the females. 
+
+```{r}
+ca_data %>% 
+  group_by(gender) %>% 
+  summarize(med = median(CAS))
+```
+
+The median CAS score for females was 2.55 and 2.85 for males
+
+```{r}
+ca_data %>% 
+  summarize_if(is.numeric, funs(mean, sd))
+```
+
+```{r}
+ca_data %>% 
+  summarize_at(vars(starts_with("C")), 
+               list(m = ~mean(.), s = ~sd(.)))
+```
+
+Getting the mean and standard deviation by gender
+
+```{r}
+ca_data %>% 
+  group_by(gender) %>% 
+  summarize_if(is.numeric, funs(mean, sd))
+```
+
+```{r}
+ca_data %>% 
+  group_by(gender) %>% 
+  summarize_at(vars(starts_with("C")), 
+               list(m = ~mean(.), s = ~sd(.)))
+```
+
+To see if there is a relationship between the CAS and CARS score
+```{r}
+ggplot(ca_data, aes(x = CAS, y=CARS)) + geom_point()
+```
+
+```{r}
+ggplot(ca_data, aes(x = CAS, y=CARS, color=gender)) + geom_point()
+```
+
+```{r}
+ggplot(ca_data, aes(x = CAS, y=CARS, color=gender)) + geom_point() + geom_smooth()
+```
+
+```{r}
+ggplot(ca_data, aes(x = CAS, y=CARS, color=gender)) + 
+  geom_point() + 
+  facet_wrap(~gender)
+```
+```{r}
+ggplot(ca_data, aes(x = CAS, y=CARS, color=gender)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm') +
+  facet_wrap(~gender)
+```
+
+## Test Scores in Two Classes
+
+```{r}
+my_url <- "http://www.utsc.utoronto.ca/~butler/d29/marks.txt"
+marks <- read_delim(my_url, " ")
+```
+
+
+```{r}
+marks
+```
+
+```{r}
+ggplot(marks, aes(x = class, y = score)) + geom_boxplot()
+```
+
+Thomas's class has a higher mean but the box plots do overlap so the
+distribution of the scores is similar
+
+```{r}
+ggplot(marks, aes(x=1, y = score)) +
+  geom_boxplot()
+```
+
+```{r}
+marks %>% 
+  summarise(mean_mark = mean(score))
+```
+
+```{r}
+marks %>% 
+  summarise(median_mark = median(score))
+```
+
+
+```{r}
+marks %>% 
+  group_by(class) %>% 
+  summarise(median_mark_by_class = median(score))
+```
+
+
+
+```{r}
+quantile(marks$score)
+```
+
+```{r}
+marks %>% 
+  group_by(class) %>% 
+  summarize(q1 = quantile(score, 0.25),
+            q3 = quantile(score, 0.75))
+```
+
