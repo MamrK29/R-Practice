@@ -1,0 +1,105 @@
+---
+title: "PASIAS Chapter 7"
+author: "Mohammad Amr Khan"
+output: html_notebook
+---
+
+## Packages 
+
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+## 7.1 Children and Electronic Devices
+
+Do children (aged 8–17) spend more time on electronic devices now than they did 10 years ago? Samples of 15 children aged 8–17 were taken in each of two years, 1999 and 2009, and the children (with their parents’ help) were asked to keep a diary of the number of hours they spent using electronic devices on a certain day. 
+
+The data is available at *http://www.utsc.utoronto.ca/~butler/c32/pluggedin.txt*
+
+It looks to be space delimited
+
+```{r}
+devices_url <- "http://www.utsc.utoronto.ca/~butler/c32/pluggedin.txt"
+devices_data <- read_delim(devices_url, " ")
+```
+
+There are two columns years and hours.
+
+the year indicate if the children were in the 1999 or 2009 group.
+
+```{r}
+devices_data
+```
+
+There are 30 rows of data.
+
+To get the count by each year.
+```{r}
+devices_data %>% 
+  group_by(year) %>% 
+  summarise(n())
+```
+
+There are fifteen children that were in the 1999 group and 15 in the 2009 group.
+
+```{r}
+ggplot(devices_data, aes(x=factor(year), y=(hours))) + geom_boxplot()
+```
+
+The median for 2009 is higher than for 1999. The 2009 group has a slight left skew since the lower whisker is longer.
+
+
+To test whether the mean hours increased over time.
+we use $alternative = "less"$ because we think the 1999 should have lower mean.
+
+```{r}
+t.test(hours ~ year, data=devices_data, alternative = "less")
+```
+
+The p-value is 0.001 which is less than 0.05 which so we reject the null hypothesis. That is to the children in 2009 are spending more time on their devices which makes sense.
+
+```{r}
+t.test(hours~year,data=devices_data,conf.level=0.99) 
+```
+The value is -3.06 to -0.27
+
+## 7.3 Bell Peppers and too much water
+
+A pathogen called Phytophthora capsici causes bell peppers to wilt and die. It is thought that too much water aids in the spread of the pathogen. Two fields are under study, labelled a and b. The first step in the research project is to compare the mean soil water content of the two fields. There is a suspicion that field a will have a higher water content than field b. 
+
+```{r}
+pepper_url <- "http://www.utsc.utoronto.ca/~butler/d29/bellpepper.csv"
+pepper_data <- read_csv(pepper_url)
+```
+
+```{r}
+pepper_data
+```
+
+```{r}
+pepper_data %>% 
+  group_by(field) %>% 
+  summarise(n())
+```
+
+14 entries from field a, 16 from field b
+
+```{r}
+ggplot(pepper_data, aes(x=field, y=water)) + geom_boxplot()
+```
+
+This one is rather interesting: the distribution of water contents for field a is generally higher than that for field b, but the median for a is actually lower.
+
+**Question**
+
+Do a two-sample -test to test whether there is evidence that the mean water content in field a is higher than that of field b. What do you conclude? Explain briefly. (You’ll need to figure out a way of doing a one-sided test, or how to adapt the results from a two-sided test.)
+
+Since we want to test if mean water content in field a is greater than that in field b, we use $alternative = "greater"$
+
+```{r}
+t.test(water ~ field, data=pepper_data, alternative = "greater")
+```
+
+The p-value is 0.027 which is < 0.05 so we reject the null hypothesis which is to that both field have the same mean water content.
+Based on the t test, field a has a higher mean water content than field b.
+

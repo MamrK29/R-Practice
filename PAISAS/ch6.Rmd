@@ -1,0 +1,276 @@
+---
+title: "PASIAS Ch 6 - One-Sample Inference"
+author: "Mohammad Amr Khan"
+output: html_notebook
+---
+
+## Packages
+
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+## 6.1 Hunter-gathers in Australia
+
+### Brief
+
+A hunter-gatherer society is one where people get their food by hunting, fishing or foraging rather than by agriculture or by raising animals. Such societies tend to move from place to place. Anthropologists have studied hunter-gatherer societies in forest ecosystems across the world. The average population density of these societies is 7.38 people per 100 km. Hunter-gatherer societies on different continents might have different population densities, possibly because of large-scale ecological constraints (such as resource availability), or because of other factors, possibly social and/or historic, determining population density.
+
+### Data
+
+The data is available at *http://www.utsc.utoronto.ca/~butler/c32/hg.txt*
+
+Some hunter-gatherer societies in Australia were studied, and the population density per 100 km recorded for each.
+
+The data set looks to be space delimited so we can use read_delim
+
+```{r}
+hunter_url <- "http://www.utsc.utoronto.ca/~butler/c32/hg.txt"
+hunter_data <- read_delim(hunter_url, " ")
+```
+The column specification shows that R was able to read two columns, one titled
+name which is a text column and density which is an double. This looks to be correct as the data contains 
+names of society and their population density. 
+
+```{r}
+hunter_data
+```
+
+
+The data set contains 13 rows (13 societies) and their associated population denisty
+
+#### Question of Interest
+
+The question of interest is whether these Australian hunter-gatherer societies are like the rest of the world in terms of mean population density.
+
+*Null Hypothesis* The mean population density is 7.38
+*Alternative Hypothesis* The mean population is not 7.38
+
+Since this is a one sample data set we can use the t test to test our hypothesis.
+
+```{r}
+t.test(hunter_data$density, mu=7.38)
+```
+
+The p-value is smaller than *0.05* so we reject the null hypothesis.
+That is to say that the societies do not have a mean population denity is 7.38
+
+
+**The Assumption required to use a t test is that the data is normally distributed**
+
+
+```{r}
+ggplot(hunter_data, aes(x=density)) + geom_histogram(bins = 5)
+```
+
+The data its self is not normal. we can see this from the histogram.
+
+
+We can see if the sampling distribution of the sample means is normal.
+
+```{r}
+rerun(1000, sample(hunter_data$density, replace = TRUE)) %>% 
+  map_dbl(~mean(.)) %>% 
+  enframe() -> d
+d
+```
+
+we now have the mean for 1000 samples of the data.
+
+```{r}
+ggplot(d, aes(x=value)) + geom_histogram(bins = 10)
+```
+ 
+This shows that the sampling means do looks to be normally distributed we can use the t test.
+
+
+## 6.2 Buses to Boulders
+
+### Brief
+
+A bus line operates a route from Denver to Boulder (these places are in Colorado). The schedule says that the journey time should be 60 minutes. 11 randomly chosen journey times were recorded, and these are in the file link, with journey times shown in minutes.
+
+The data set is a single column
+
+```{r}
+bus_url <- "http://www.utsc.utoronto.ca/~butler/d29/buses.txt"
+bus_data <- read_delim(bus_url, " ")
+```
+The single column has been read
+
+```{r}
+bus_data
+```
+
+We get the 11 rows of data.
+
+
+*Null Hypothesis* the mean trip time is 60 minutes
+*Alternative Hypothesis* the mean trip is not 60 minutes
+
+```{r}
+t.test(bus_data$minutes, mu=60)
+```
+
+The p-value is 0.1971 which is not less than 0.05 so we cannot reject the null  hypothesis.
+That is to say we cannot say that the mean trip time is not 60 minutes.
+
+To get the 95% CI
+
+```{r}
+t.test(bus_data$minutes, conf.level = 0.95)
+```
+
+The 95% CI interval for the mean is 57.7 to 69.74. 60 minutes is within this interval.
+
+```{r}
+ggplot(bus_data, aes(x=1, y=minutes)) + geom_boxplot()
+```
+
+The boxplot shows the top whisker is longer than the bottom one, which shows that the data is right skewed.
+
+The may show that the data is not normally distributed, we can use a histogram to check
+
+```{r}
+ggplot(bus_data, aes(x=minutes)) + geom_histogram(bins = 5)
+```
+
+The data is right skewed and does not appeared to be normally distributed.
+Since the t test assumes normality, we need to check the sampling distribution of the sampling mean to determine if the t test is a good test to use.
+
+```{r}
+bus <- rerun(1000, sample(bus_data$minutes, replace = TRUE)) %>% 
+  map_dbl(~mean(.)) %>% 
+  enframe()
+
+bus
+```
+
+The sample means for 1000 samples are stored in the data frame called bus.
+
+```{r}
+ggplot(bus, aes(value)) + geom_histogram(bins=10)
+```
+
+The data is normally distributed so the t test is a good test.
+
+```{r}
+ggplot(bus, aes(x=1, y=value)) + geom_boxplot()
+```
+
+The whiskers look to be the same size whith a few outliers. Shows symmetric data.
+
+### Length of Gestation in North Carolina
+
+### Brief
+
+500 randomly chosen births of babies in North Carolina. There is a lot of information: not just the weight at birth of the baby, but whether the baby was born prematurely, the ages of the parents, whether the parents are married, how long (in weeks) the pregnancy lasted (this is called the “gestation”) and so on. We
+
+Data is available at *http://www.utsc.utoronto.ca/~butler/c32/ncbirths.csv*
+
+It is a csv file.
+
+```{r}
+birth_url <- "http://www.utsc.utoronto.ca/~butler/c32/ncbirths.csv"
+birth_data <- read_csv(birth_url)
+```
+
+Let's see if the birth weight are normally distributed
+
+```{r}
+ggplot(birth_data, aes(x=`Weight (pounds)`)) + geom_histogram(bins = 8)
+```
+
+The does looks normal with a skew to the left. This should be expected since the births were randomly selected
+
+To get the 95% CI we can run a t test.
+
+```{r}
+t.test(birth_data$`Weight (pounds)`)
+```
+
+The 95% CI for the mean birth weight is 6.94 lbs to 7.20 lbs.
+
+### hypothesis Tests
+
+#### Brief
+
+Birth weights of babies born in the United States have a mean of 7.3 pounds. Is there any evidence that babies born in North Carolina are less heavy on average? State appropriate hypotheses, do your test, obtain a P-value and state your conclusion, in terms of the original data.
+
+**We need to run a one-sided hypothesis test**
+*Before we do that, let's check run a hypothesis tests to see if the birth weight has a mean of 7.3 pounds.*
+
+Here are our hypothesis:
+Null: mean birth weight is 7.3 pounds
+Alternative: mean birth weight is not 7.3 pounds
+
+```{r}
+t.test(birth_data$`Weight (pounds)`, mu=7.3)
+```
+
+The p-value is 0.0006 which is smaller than 0.05 so we reject the null hypothesis. This means that the birth weights do not have a mean of 7.3 pounds.
+
+Let check if the NC babies have a lower mean weight than the US mean.
+*This is one sided test*
+Null: mean birth weight is 7.3 pounds
+Alternative: mean birth weight < 7.3 pounds
+
+Since the value we are looking at is the birth weight, we need to use the command $alternative = "less" since we are looking to see if the weight are lower.
+
+```{r}
+t.test(birth_data$`Weight (pounds)`, mu=7.3, alternative = "less")
+```
+ 
+The p-value is 0.003 so we reject the null hypothesis. thus we conclude that the mean birth weight of babies in North Carolina is indeed less than 7.3 pounds
+
+
+The t-test works well here because of the large data set.
+
+## 6.4 Inferring Ice Break-up in Nenana
+
+### Brief
+
+Nenana, Alaska, is about 50 miles west of Fairbanks. Every spring, there is a contest in Nenana. A wooden tripod is placed on the frozen river, and people try to guess the exact minute when the ice melts enough for the tripod to fall through the ice. The contest started in 1917 as an amusement for railway workers, and has taken place every year since. Now, hundreds of thousands of people enter their guesses on the Internet and the prize for the winner can be as much as $300,000.
+
+Because so much money is at stake, and because the exact same tripod is placed at the exact same spot on the ice every year, the data are consistent and accurate. 
+
+```{r}
+nenana_url <- "http://www.utsc.utoronto.ca/~butler/c32/nenana.txt"
+nenana_data <- read_tsv(nenana_url)
+```
+```{r}
+nenana_data
+```
+
+Getting a 90% CI on the mean Julian date
+
+```{r}
+t.test(nenana_data$JulianDate, conf.level = 0.90)
+```
+
+The 90% confidence interval of the mean JulianDate is 124.5 to 126.6
+
+The t test assumed normality
+
+```{r}
+ggplot(nenana_data, aes(x=JulianDate)) + geom_histogram(bins = 5)
+```
+
+Looks to be normally distrbuted with slight left skew.
+
+*Null Hypothesis* the after JulianDate for the stake falling is 130
+*Alternative Hypothesis* the mean is not 130
+
+Two-sided test
+
+```{r}
+t.test(nenana_data$JulianDate, mu=130)
+```
+
+P-value of 0.00005 is much smaller than 130 so we reject null hypothesis. That is to stay the mean time for a stake to fall is not 130 days. 
+If we were to assume that the person is correct then the stake is falling earlier than it used to.
+
+```{r}
+ggplot(nenana_data, aes(x = Year, y = JulianDate)) + geom_point() + geom_smooth()
+```
+
