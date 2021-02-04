@@ -1,0 +1,136 @@
+---
+title: "PASIAS CHapter 9 - The sign test"
+author: "Mohammad Amr Khan"
+output: html_notebook
+---
+
+**Will only contains questions 1 - 3**
+
+## Packages
+
+```{r}
+library(tidyverse)
+```
+
+## Running a maze
+
+```{r}
+myurl <- "http://www.utsc.utoronto.ca/~butler/c32/maze.txt"
+times <- read_delim(myurl, " ")
+```
+```{r}
+times
+```
+
+**Manual Sign test**
+
+```{r}
+times %>% count(time > 60)
+```
+
+```{r}
+p <- sum(dbinom(0:5, 21, 0.5))
+p
+```
+
+```{r}
+sum(dbinom(16:21, 21, 0.5))
+```
+since we want to the two sided p val
+```{r}
+2*p
+```
+
+*Using SMMR*
+
+```{r}
+install.packages("devtools")
+```
+
+```{r}
+library(devtools)
+```
+```{r}
+install_github("nxskok/smmr")
+```
+
+```{r}
+library(smmr)
+```
+
+
+```{r}
+sign_test(times, time, 60)
+```
+
+two-sided is 0.0266 
+
+```{r}
+pval_sign(60, times, time)
+```
+Gives the two sided p-value
+
+to get the confidence interval 
+```{r}
+ci_median(times, time)
+```
+
+## Chocolate Chips
+
+A famous cookie manufacturer claims that their bags of chocolate chip cookies contain “more than 1100 chocolate chips on average”. A diligent group of students buys 16 bags of these cookies and counts the number of chocolate chips in each bag. The results are in http://www.utsc.utoronto.ca/~butler/c32/chips.txt.
+
+Single column so any method of reading will work
+
+```{r}
+chip_url <- "https://www.utsc.utoronto.ca/~butler/c32/chips.txt"
+chip_data <- read_table(chip_url)
+```
+
+```{r}
+chip_data
+```
+
+```{r}
+ggplot(chip_data, aes(x=chips)) + geom_histogram(bins = 4)
+```
+
+Right skew 
+
+```{r}
+chip_data %>% count(chips < 1100)
+```
+
+one less than 1100.
+
+```{r}
+chip_data %>% mutate(less=(chips<1100)) %>% count(less)
+```
+
+```{r}
+sign_test(chip_data, chips, 1100)
+```
+
+We reject null hypothesis. 
+
+```{r}
+ci_median(chip_data, chips)
+```
+135 to 1325. I would round these off to whole numbers, since the data values are all whole numbers. These values are all above 1100, which supports the conclusion we got above that the median is above 1100. This is as it should be, because the CI is “all those medians that would not be rejected by the sign test”.
+
+## The Power of the Sign Test
+
+
+```{r}
+power.t.test(n=10, delta = 50 -40, sd = 15, type = "one.sample")
+```
+
+Power of 50%.
+
+```{r}
+x=rnorm(10,50,15)  
+x
+```
+```{r}
+tibble(x) %>% count(x<40)
+```
+

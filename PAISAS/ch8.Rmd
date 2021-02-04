@@ -1,0 +1,151 @@
+---
+title: "PASIAS Chapter 8 - Power and Sample Size"
+author: "Mohammad Amr Khan"
+output: html_notebook
+---
+
+## Packages
+
+```{r}
+library(tidyverse)
+```
+
+## Simulating Power
+
+### Brief
+
+Use rnorm to generate 10 random values from a normal distribution with mean 20 and SD 2. Do your values look reasonable? Explain briefly.
+
+```{r}
+x <- rnorm(10, 20, 2)
+x
+```
+95% of the sampled values should be within 2 SDs of the mean, that is, between 16 and 24 (or 99.7% should be within 3 SDs of the mean, between 14 and 26). 
+
+```{r}
+mean(x)
+```
+```{r}
+sd(x)
+```
+The sample SD is more variable than the sample mean, so it can get further away from the population SD than the sample mean does from the population mean.
+
+Estimate by simulation the power of a -test to reject a null hypothesis of 20 when the true mean is also 20, the population SD is 2, and the sample size is 10, against a (default) two-sided alternative. Remember the steps: (i) generate a lot of random samples from the true distribution, (ii) run the -test with the required null mean, (iii) pull out the P-values, (iv) count how many of them are 0.05 or less.
+
+
+```{r}
+rerun(1000, rnorm(10, 20, 2)) %>% 
+  map(~t.test(., mu=20)) %>% 
+  map_dbl("p.value") -> pvals
+pvals
+```
+```{r}
+tibble(pvals) %>% count(pvals <= 0.05)
+```
+
+We we reject 4% of the time.
+That we the power is 4% in this case.
+
+**YMMV**
+
+It we change the true mean to 22.
+
+```{r}
+rerun(1000, rnorm(10, 22, 2)) %>% 
+  map(~t.test(., mu=20)) %>% 
+  map_dbl("p.value") -> pvals_22
+tibble(pvals_22) %>% count(pvals_22 <= 0.05)
+```
+
+The power is now 78.9%.
+Here wer are likely correct when rejects a null hypothesis of 20.
+
+
+using R
+
+```{r}
+power.t.test(n=10, delta = 22-20, sd = 2, type = "one.sample", alternative = "two.sided")
+```
+
+The power test give us a power of 80%
+
+if we wanted a power of 90%
+
+```{r}
+power.t.test(power = 0.90, delta = 22-20, sd = 2, type = "one.sample", alternative = "two.sided")
+```
+
+we would need a sample size of 13
+
+## Calculating power and sample size for estimating mean
+
+We are planning a study to estimate a population mean. The population standard deviation is believed to be 20, and the population distribution is believed to be approximately normal. We will be testing the null hypothesis that the population mean is 100. Suppose the population mean is actually 110, and we want to determine how likely we are to (correctly) reject the null hypothesis in this case, using a two-sided (but one-sample) test with $\alpha = 0.05$
+
+Sample size is 30
+
+```{r}
+power.t.test(30, delta = 110 - 100, sd = 20, type = "one.sample")
+```
+
+The power is 75%
+
+going by simulation
+
+```{r}
+rerun(1000, rnorm(30, 110, 20)) %>% 
+  map(~t.test(., mu=100)) %>% 
+  map_dbl("p.value") %>% 
+  enframe() %>% 
+  count(value <= 0.05)
+```
+
+The Power is 74% which is close the the calculated value.
+
+
+For a power of at least 80 we can use $power.t.test()$ to get the required sample size
+
+```{r}
+power.t.test(power = 0.80, delta = 110 - 100, sd = 20, type = "one.sample")
+```
+
+We need 34 samples.
+
+## Simulating Powers for Proportions
+
+In opinion surveys (and other places), we are testing for a proportion $p$ (for example, the proportion of people agreeing with some statement). Often, we want to know whether the proportion is “really” greater than 0.5.
+
+
+That would entail testing a null $H_0 : p = 0.5$ against an alternative $H_a : p >0.5$. This is usually done by calculating the test statistic.
+
+
+```{r}
+set.seed(457299)
+```
+
+
+```{r}
+rbinom(1, 100, 0.6)
+```
+```{r}
+rbinom(3, 100, 0.6)
+```
+```{r}
+prop.test(60, 100, 0.5, alternative = "greater")
+```
+
+The P-value should at least be fairly small, since 60 is a bit bigger than 50. 
+
+```{r}
+p_test <- prop.test(60, 100, 0.5, alternative = "greater")
+p_test$p.value
+```
+
+```{r}
+rerun(10000, rbinom(1, 500, 0.56)) %>%
+  map(~ prop.test(., 500, 0.5, alternative = "greater")) %>%
+  map_dbl("p.value") ->
+pvals
+tibble(pvals) %>% count(pvals <= 0.05)
+```
+
+The estimated power is about 85%. That is, if  is actually 0.56 and we have a sample of size 500, we have a good chance of (correctly) rejecting
