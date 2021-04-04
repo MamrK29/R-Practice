@@ -134,3 +134,104 @@ x
 tibble(x) %>% count(x<40)
 ```
 
+## 9.4 Sugar in Breakfast Cereals
+
+The data is available here `http://www.utsc.utoronto.ca/~butler/c32/cereal-sugar.txt`
+It is a text file, that looks to be delimited by spaces
+
+```{r}
+cereal_url <- "http://www.utsc.utoronto.ca/~butler/c32/cereal-sugar.txt"
+cereal_data <- read_delim(cereal_url, delim = " ")
+```
+
+There are two columns in the data, one which contains text and another with 
+numbers. 
+
+This is expected
+
+```{r}
+cereal_data
+```
+
+```{r}
+cereal_data %>% group_by(who) %>% 
+  summarise(sugar_mean=mean(sugar))
+```
+
+The children cereal have a higher sugar mean than the adult brands.
+
+```{r}
+ggplot(cereal_data, aes(x=who, y=sugar)) + geom_boxplot()
+```
+The spread of the data is different since the boxplot are of different sizes
+The outliers in adults pull the mean of the adult sugar level up.
+
+A normal t-test is not reliable here since the t test assumes normality of the data, here the data is not normal so we should not be using the two sample t test
+
+```{r}
+median_test(cereal_data, sugar, who)
+```
+
+The p value is smaller than 0.05 so we conclude that the median sugar level in cereal is different
+
+```{r}
+t.test(sugar ~ who, data = cereal_data)
+```
+
+The p value is much smaller but we get the confidence intervals here
+
+## Fear of math
+
+Two new short courses have been proposed for helping students who suffer from severe math phobia. The courses are labelled A and B. Ten students were randomly allocated to one of these two courses, and each student’s score on a math phobia test was recorded after they completed their course. The math phobia test produces whole-number scores between 0 and 10, with a higher score indicating a greater fear of mathematics. The data can be found in link. We start with R for this question.
+
+Data is available here `http://www.utsc.utoronto.ca/~butler/c32/mathphobia.txt`
+
+Data is in a text file where each entry is separated by spaces so delimited 
+
+```{r}
+fear_url <- "http://www.utsc.utoronto.ca/~butler/c32/mathphobia.txt"
+fear_data <- read_delim(fear_url, delim = " ")
+```
+Two columns one for course and another for phobis
+which is what is expected
+
+
+```{r}
+fear_data
+```
+
+```{r}
+fear_data %>% group_by(course) %>% 
+  summarise(how_many=n())
+```
+
+```{r}
+t.test(phobia ~ course, data=fear_data)
+```
+
+P value is 0.445 so we cannot reject the null hypothesis that there is no difference is mean phobia scores
+
+```{r}
+ggplot(fear_data, aes(x=course, y=phobia)) + geom_boxplot()
+```
+
+The spread of the data is different event though the medians looks to be similar.
+
+The t test assumes normality and the boxplot shows evidence that the data is not normal.
+
+```{r}
+ggplot(fear_data, aes(sample=phobia)) + stat_qq() + stat_qq_line() + facet_wrap(~ course)
+```
+
+The points are close to the line, however there is a limited sample size so the central limit theorem does not apply. 
+```{r}
+median_test(fear_data, phobia, course)
+```
+
+
+P value is 0.659 so we cannot reject null median hypothesis
+
+## Medical Instructions
+
+
+

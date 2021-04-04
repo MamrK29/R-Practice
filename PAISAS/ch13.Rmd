@@ -1,0 +1,146 @@
+---
+title: "PASIAS Chapter 13"
+author: "Mohammad Amr Khan"
+output: html_notebook
+---
+
+# PASIAS Chapter 13: Tidying and Selecting Data
+
+## Packages 
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+## 13.1 Tidying the Jays Data
+
+```{r}
+jays_url <- "http://www.utsc.utoronto.ca/~butler/c32/jays15-home.csv"
+jays_data <- read_csv(jays_url)
+```
+```{r}
+spec(jays_data)
+```
+
+```{r}
+jays_data
+```
+
+```{r}
+jays_data %>% filter(opp == "NYY")
+```
+
+```{r}
+jays_data %>% filter(opp == "NYY") %>% select(wl:streak)
+```
+
+```{r}
+jays_data %>% filter(attendance > 30000) %>% 
+  select(c(Daynight, attendance))
+```
+
+```{r}
+jays_data %>%
+  filter(attendance > 30000) %>%
+  count(Daynight)
+```
+
+```{r}
+jays_data %>% group_by(Daynight) %>% 
+  summarize(mean_attendance = mean(attendance), sd_atten = sd(attendance))
+```
+
+```{r}
+jays_data %>%
+  group_by(Daynight) %>%
+  summarize(
+    median.att = median(attendance),
+    iqr.att = IQR(attendance)
+  )
+```
+
+```{r}
+ggplot(jays_data, aes(x = Daynight, y = attendance)) + geom_boxplot()
+```
+
+```{r}
+library(smmr)
+```
+
+
+```{r}
+median_test(jays_data, attendance, Daynight)
+```
+```{r}
+ggplot(jays_data, aes(sample = attendance)) +
+  stat_qq() + stat_qq_line() +
+  facet_wrap(~Daynight, ncol = 1)
+```
+## 13.2 Baseball and softball spaghetti
+
+```{r}
+myurl <- "http://www.utsc.utoronto.ca/~butler/c32/throw.txt"
+throws <- read_delim(myurl, " ", col_names = c("student", "baseball", "softball"))
+```
+
+```{r}
+throws
+```
+
+```{r}
+throws %>% mutate(fs = factor(student))
+```
+
+```{r}
+throws %>% mutate(fs = factor(student)) %>%
+  pivot_longer(baseball:softball, names_to ="Sport", values_to="distance")
+```
+
+```{r}
+throws %>%
+  mutate(fs = factor(student)) %>%
+  pivot_longer(baseball:softball, names_to="ball", values_to="distance") %>% 
+  select(-student) %>% 
+  ggplot(aes(x = ball, y = distance)) + geom_point()
+```
+
+```{r}
+throws %>%
+  mutate(fs = factor(student)) %>%
+  pivot_longer(baseball:softball, names_to="ball", values_to="distance") %>% 
+  ggplot(aes(x = ball, y = distance, group = fs, colour = fs)) +
+  geom_point() + geom_line()
+```
+```{r}
+throws %>%
+  mutate(fs = factor(student)) %>%
+  pivot_longer(baseball:softball, names_to="ball", values_to="distance") %>% 
+  ggplot(aes(x = ball, y = distance, group = student, colour = student)) +
+  geom_point() + geom_line()
+```
+```{r}
+throws %>%
+  mutate(fs = factor(student)) %>%
+  pivot_longer(baseball:softball, names_to="ball", values_to="distance") %>% 
+  ggplot(aes(x = ball, y = distance, group = fs, colour = fs)) +
+  geom_point() + geom_line() +
+  guides(colour = F)
+```
+## 13.3 Ethanol and Sleep Time in Rats
+
+```{r}
+my_url <- "http://www.utsc.utoronto.ca/~butler/c32/ratsleep.txt"
+sleep1 <- read_delim(my_url, " ")
+```
+```{r}
+sleep1
+```
+
+```{r}
+(sleep1 %>% 
+  pivot_longer(contains("obs"), names_to="rep", values_to="sleeptime") -> sleep)
+```
+
+```{r}
+ggplot(sleep, aes(x = treatment, y = sleeptime)) + geom_boxplot()
+```
+

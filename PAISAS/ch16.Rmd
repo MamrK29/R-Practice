@@ -1,0 +1,88 @@
+---
+title: "PAISAS Chapter 16"
+output: html_notebook
+---
+
+# Functions
+
+```{r}
+library(tidyverse)
+```
+
+
+## 16.1 Making Some R Functions
+
+A temperature in Celsius is converted to one in Kelvin by adding 273.15. (A temperature of  Celsius, 0 Kelvin, is the “absolute zero” temperature that nothing can be colder than.) Write a function called c_to_k that converts an input Celsius temperature to one in Kelvin, and test that it works.
+
+```{r}
+celsius_to_kelvin <- function(x){
+  x + 273.15
+}
+```
+
+```{r}
+celsius_to_kelvin(0)
+```
+Write a function to convert a Fahrenheit temperature to Celsius. The way you do that is to subtract 32 and then multiply by $5/9$
+
+```{r}
+farenheit_to_celsius <- function(x){
+  (x - 32) * 5/9
+}
+```
+
+```{r}
+farenheit_to_celsius(50)
+```
+```{r}
+f_to_k <- function(x){
+  c <- farenheit_to_celsius(x)
+  k <- celsius_to_kelvin(c)
+  return(k)
+}
+```
+
+
+```{r}
+f_to_k(32)
+```
+```{r}
+far_kelvin <- function(x){
+  celsius_to_kelvin(farenheit_to_celsius(x))
+}
+```
+
+```{r}
+far_kelvin(32)
+```
+```{r}
+f_to_c <- function(F = 68) {
+  (F - 32) * 5 / 9
+}
+```
+
+```{r}
+f_to_c(68)
+f_to_c()
+```
+```{r}
+temps <- seq(30, 80, 10)
+temps
+```
+```{r}
+f_to_c(temps)
+```
+```{r}
+tibble(temps = seq(30, 80, 10)) %>%
+  mutate(celsius = f_to_c(temps))
+```
+
+```{r}
+temps <- seq(30, 80, 10)
+temps %>%
+  enframe(value = "fahrenheit") %>%
+  mutate(celsius = f_to_c(temps))
+```
+
+
+

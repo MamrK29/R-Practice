@@ -1,0 +1,180 @@
+---
+title: "PAISAS Chapter 12"
+author: "Mohammad Amr Khan"
+output: html_notebook
+---
+# Chapter 12: Analysis of Variance
+
+## Packages
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+## 12.1 Movie Ratings and length
+
+Before a movie is shown in theatres, it receives a “rating” that says what kind of material it contains. link explains the categories, from G (suitable for children) to R (anyone under 17 must be accompanied by parent/guardian). In 2011, two students collected data on the length (in minutes) and the rating category, for 15 movies of each rating category, randomly chosen from all the movies released that year. 
+
+The data is available at `http://www.utsc.utoronto.ca/~butler/c32/movie-lengths.csv`
+
+File ending shows it is a .csv file so we can use `read_csv` to bring the data into R
+
+```{r}
+movie_url <- "http://www.utsc.utoronto.ca/~butler/c32/movie-lengths.csv"
+movie_data <- read_csv(movie_url)
+```
+The columnd specification shows that there are two columns, one titled length which contains the movei length
+and the rating which is a text column
+
+```{r}
+movie_data
+```
+
+Looking at 8 random entries
+
+```{r}
+movie_data %>% slice_sample(n=8)
+```
+
+Getting the count of movies by rating
+
+```{r}
+movie_data %>% group_by(rating) %>% 
+  summarise(n=n())
+```
+
+We see that we have 4 different ratings with 15 movies for each rating.
+
+Getting the anova table
+
+```{r}
+movie_data.aov <- aov(length ~ rating, data = movie_data)
+summary(movie_data.aov)
+```
+
+We see that the P-value is much smaller than 0.05 so we reject the null hypothesis that all mean lengths are the sample.
+
+```{r}
+TukeyHSD(movie_data.aov)
+```
+
+These are all comparisons with the G (“general”) movies, which are shorter on average than the others (which are not significantly different from each other).
+
+The anova calculations assume normality in the data and equal spead
+
+```{r}
+ggplot(movie_data, aes(y=length, x=rating)) + geom_boxplot()
+```
+For ANOVA, we are looking for approximately normal distributions within each group and approximately equal spreads. Without the outliers, I would be more or less happy with that, but the G movies have a low outlier that would pull the mean down and the PG and PG-13 movies have outliers that would pull the mean up. So a comparison of means might make the differences look more significant than they should. Having said that, you could also say that the ANOVA is very significant, so even considering the effect of the outliers, the differences between G and the others are still likely to be significant.
+
+Since there are outliers present we can say that the data in not normal we can we Mood's Median Package
+
+```{r}
+library(smmr)
+```
+
+```{r}
+median_test(movie_data, length, rating)
+```
+
+The p-value of less than 0.05 shows that the median lenght of the ratings are not the same.
+
+To see which are significant we can do a pairwise median test
+```{r}
+pairwise_median_test(movie_data, length, rating)
+```
+
+There are two significant differences in median length: between G movies and the two flavours of PG movies. The G movies are significantly shorter (as you can tell from the boxplot), but the difference between G and R movies is no longer significant (a change from the regular ANOVA).
+
+## 12.2 Deer and How much they eat
+
+Do adult deer eat different amounts of food at different times of the year? The data in link are the weights of food (in kilograms) consumed by randomly selected adult deer observed at different times of the year (in February, May, August and November). We will assume that these were different deer observed in the different months. (If the same animals had been observed at different times, we would have been in the domain of “repeated measures”, which would require a different analysis, beyond the scope of this course.)
+
+The data is available at `http://www.utsc.utoronto.ca/~butler/c32/deer.txt`
+
+The data is space delimited so we can used `read_delim()` to import the data into R
+
+```{r}
+deer_url <- "http://www.utsc.utoronto.ca/~butler/c32/deer.txt"
+deer_data <- read_delim(deer_url, " ")
+```
+There are two columns, one for the month and another for the amount of food consumed in kg
+
+```{r}
+deer_data
+```
+
+Getting the median weight of food consumed per month
+```{r}
+deer_data %>% group_by(month) %>% summarise(n=n(), med=median(food))
+```
+
+```{r}
+ggplot(deer_data, aes(x=month, y=food)) + geom_boxplot()
+```
+This offers the suggestion that maybe November will be significantly higher than the rest and May significantly lower, or at least they will be significantly different from each other.
+
+Bear in mind that there are only 5 or 6 observations in each group, so you won’t be able to say much about normality. In any case, we are going to be doing a Mood’s median test, so any lack of normality doesn’t matter
+
+```{r}
+deer_data %>% summarise(med=median(food)) -> food_med
+food_med
+```
+median weight consumed if 4.7 kg
+
+```{r}
+tab1 <- with(deer_data, table(month, food < 4.7))
+tab1
+```
+```{r}
+chisq.test(tab1, correct = F)
+```
+
+```{r}
+median_test(deer_data, food, month)
+```
+
+The P-value came out in between the other two, but the conclusion is the same all three ways: the months are not all the same in terms of median food eaten. The researchers can then go ahead and try to figure out why the animals eat different amounts in the different months.
+
+```{r}
+pairwise_median_test(deer_data, food, month)
+```
+
+## 12.3 Movie Ratings Again
+```{r}
+movie_data
+```
+
+```{r}
+movie_data %>% group_by(rating) %>% 
+  summarise(count=n(), med=median(length))
+```
+G rated movies are the shortest
+
+```{r}
+ggplot(movie_data, aes(x = rating, y = length)) + geom_boxplot()
+```
+
+```{r}
+ggplot(movie_data, aes(sample = length)) +
+  stat_qq() + stat_qq_line() +
+  facet_wrap(~rating)
+```
+```{r}
+median_test(movie_data, length, rating)
+```
+The movies do not all have the same median length, or at least one of the rating types has movies of different median length from the others. Or something equivalent to that. 
+
+```{r}
+pairwise_median_test(movie_data, length, rating)
+```
+
+```{r}
+movie_data %>%
+  group_by(rating) %>%
+  summarize(count = n(), med = median(length))
+```
+
+```{r}
+median(movie_data$length)
+```
+

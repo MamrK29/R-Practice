@@ -1,0 +1,259 @@
+---
+title: "PASIAS Chapter 14"
+author: "Mohammad Amr Khan"
+output: html_notebook
+---
+
+# Chapter 14 Regression
+
+## Packages 
+
+```{r}
+library(tidyverse)
+library(broom)
+library(MASS)
+```
+
+## 14.1 Rainfall in California
+
+The data in link are rainfall and other measurements for 30 weather stations in California. Our aim is to understand how well the annual rainfall at these stations (measured in inches) can be predicted from the other measurements, which are the altitude (in feet above sea level), the latitude (degrees north of the equator) and the distance from the coast (in miles).
+
+```{r}
+rain_url="http://www.utsc.utoronto.ca/~butler/c32/calirain.txt"
+rains=read_table2(rain_url)
+```
+
+
+```{r}
+rains
+```
+
+```{r}
+ggplot(rains, aes(y=rainfall, x=1)) + geom_boxplot()
+```
+```{r}
+ggplot(rains, aes(x=rainfall))+geom_histogram(bins=7)
+```
+
+There is a right skew
+
+```{r}
+rains %>% filter(rainfall>60)
+```
+
+```{r}
+rains %>% filter(rainfall<2)
+```
+
+```{r}
+ggplot(rains,aes(y=rainfall,x=altitude))+geom_point()
+```
+
+```{r}
+ggplot(rains,aes(y=rainfall,x=latitude))+geom_point()
+```
+
+```{r}
+ggplot(rains,aes(y=rainfall,x=fromcoast))+geom_point()
+```
+
+```{r}
+rains %>% 
+  pivot_longer(altitude:fromcoast, names_to="xname",values_to="x") %>%
+  ggplot(aes(x=x,y=rainfall))+geom_point()+
+  facet_wrap(~xname,scales="free")
+```
+
+```{r}
+rains %>% 
+  pivot_longer(altitude:fromcoast, names_to="xname",values_to="x") %>%
+  ggplot(aes(x=x,y=rainfall))+geom_point()+
+  facet_wrap(~xname,scales="free",ncol=2)
+```
+
+altitude: not much of anything. The stations near sea level have rainfall all over the place, though the three highest-altitude stations have the three highest rainfalls apart from Crescent City.
+
+latitude: there is a definite upward trend here, in that stations further north (higher latitude) are likely to have a higher rainfall. I’d call this trend linear (or, not obviously curved), though the two most northerly stations have one higher and one much lower rainfall than you’d expect.
+
+fromcoast: this is a weak downward trend, though the trend is spoiled by those three stations about 150 miles from the coast that have more than 40 inches of rainfall.
+
+```{r}
+rainfall.1=lm(rainfall~latitude,data=rains)
+summary(rainfall.1)
+```
+
+Both intercept and gradient p-values are signficant
+
+R-squares is however low 33%
+
+## 14.4 Facebook friends and grey matter
+
+Is there a relationship between the number of Facebook friends a person has, and the density of grey matter in the areas of the brain associated with social perception and associative memory? To find out, a 2012 study measured both of these variables for a sample of 40 students at City University in London (England). The data are at link. The grey matter density is on a z-score standardized scale. The values are separated by tabs.
+
+
+```{r}
+my_url <- "http://www.utsc.utoronto.ca/~butler/c32/facebook.txt"
+fb <- read_tsv(my_url)
+```
+
+
+```{r}
+fb
+```
+
+```{r}
+ggplot(fb, aes(x = GMdensity, y = FBfriends)) + geom_point() + geom_smooth()
+```
+
+I’d say there seems to be a weak, upward, apparently linear trend. The points are not especially close to the trend, so I don’t think there’s any justification for calling this other than “weak”. 
+
+```{r}
+fb.1 <- lm(FBfriends ~ GMdensity, data = fb)
+summary(fb.1)
+```
+
+The P-value of the slope is 0.005, which is less than 0.05. Therefore the slope is significantly different from zero. That means that the number of Facebook friends really does depend on the grey matter density, for the whole population of interest and not just the 40 students observed here
+
+```{r}
+ggplot(fb, aes(x = GMdensity, y = FBfriends)) + geom_point() +
+  geom_smooth(method = "lm")
+```
+
+```{r}
+ggplot(fb.1, aes(x = .fitted, y = .resid)) + geom_point()
+```
+
+## 14.5 Endogenous Nitrogen Excretion in Carp
+
+A paper in Fisheries Science reported on variables that affect “endogenous nitrogen excretion” or ENE in carp raised in Japan. A number of carp were divided into groups based on body weight, and each group was placed in a different tank. The mean body weight of the carp placed in each tank was recorded. The carp were then fed a protein-free diet three times daily for a period of 20 days. At the end of the experiment, the amount of ENE in each tank was measured, in milligrams of total fish body weight per day. (Thus it should not matter that some of the tanks had more fish than others, because the scaling is done properly.)
+
+The text is stored in a text file that is space delimited
+
+```{r}
+carp_url <- "http://www.utsc.utoronto.ca/~butler/c32/carp.txt"
+carp_data <- read_delim(carp_url, " ")
+```
+
+Shows that there are three columns - tank, weight and nitrogen content
+
+```{r}
+carp_data
+```
+
+```{r}
+ggplot(carp_data, aes(y=ENE, x=bodyweight)) + geom_point() + geom_smooth()
+```
+
+Higher ENE concentration leads to a lower bodyweight
+
+```{r}
+carp.1 <- lm(ENE ~ bodyweight, data=carp_data)
+summary(carp.1)
+```
+R-squared value is 0.47 which is low
+
+```{r}
+ggplot(carp.1, aes(y=.resid, x=.fitted)) + geom_point()
+```
+
+There is a trend in the residuals so a linear model is not appropriate
+
+```{r}
+carp.2 <- lm(ENE ~ bodyweight + I(bodyweight^2), data=carp_data)
+summary(carp.2)
+```
+
+R-squared has increased but this could be since we added another parameter. But adjusted R-squared also shows the increase
+
+P value for squared bodyweight is 0.031 which is significant
+
+```{r}
+ggplot(carp.2, aes(y=.fitted, x=carp_data$bodyweight), color="blue") + geom_line(color="blue") +
+         geom_point(data=carp_data, aes(x=bodyweight, y = ENE))
+```
+
+```{r}
+install.packages("broom")
+```
+
+```{r}
+carp.2a <- augment(carp.2, carp_data)
+carp.2a
+```
+
+```{r}
+g <- ggplot(carp.2a, aes(x = bodyweight, y = .fitted)) +
+  geom_line(colour = "blue") +
+  geom_point(aes(y = ENE))
+g
+```
+```{r}
+ggplot(carp.2, aes(y=.resid, x=.fitted)) + geom_point()
+```
+Still a curve
+
+```{r}
+carp.3 <- lm(ENE ~ I(1 / bodyweight), data = carp_data)
+summary(carp.3)
+```
+
+Higher R squared vlaue and
+Is signficant.
+
+```{r}
+boxcox(ENE ~ bodyweight, data=carp_data)
+```
+
+## 14.10 Crickets Revisited
+
+```{r}
+my_url <- "http://www.utsc.utoronto.ca/~butler/c32/crickets2.csv"
+crickets <- read_csv(my_url)
+```
+
+```{r}
+crickets
+```
+
+```{r}
+t.test(pulse_rate ~ species, data = crickets)
+```
+
+```{r}
+pulse.0 <- lm(pulse_rate ~ species, data = crickets)
+summary(pulse.0)
+```
+
+```{r}
+t.test(pulse_rate ~ species, data = crickets, var.equal = T)
+```
+
+```{r}
+ggplot(crickets, aes(x = temperature, y = pulse_rate, colour = species)) +
+  geom_point()
+```
+```{r}
+pulse.1 <- lm(pulse_rate ~ species + temperature, data = crickets)
+summary(pulse.1)
+```
+
+```{r}
+pulse.2 <- lm(pulse_rate ~ species * temperature, data = crickets)
+summary(pulse.2)
+```
+```{r}
+anova(pulse.1, pulse.2)
+```
+
+```{r}
+ggplot(crickets, aes(x = temperature, y = pulse_rate, colour = species)) +
+  geom_point() + geom_smooth(method = "lm", se = F)
+```
+
+```{r}
+ggplot(pulse.1, aes(x = .fitted, y = .resid)) + geom_point()
+```
+```{r}
+ggplot(pulse.1, aes(x = crickets$temperature, y = .resid)) + geom_point()
+```
+
